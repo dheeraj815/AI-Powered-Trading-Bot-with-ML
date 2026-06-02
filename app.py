@@ -1,9 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════╗
-║          QUANT.AI  —  Algorithmic Trading Terminal v3.0          ║
-║          Full-featured, real data, all modules operational       ║
-╚══════════════════════════════════════════════════════════════════╝
-"""
 
 import streamlit as st
 import pandas as pd
