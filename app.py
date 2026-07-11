@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -449,36 +448,24 @@ for k, v in _defaults.items():
 
 @st.cache_data(ttl=60, show_spinner=False)
 def fetch_data(symbol: str, period: str = "1y"):
+    """Fetch OHLCV history for a symbol. Returns None on failure."""
     try:
         ticker = yf.Ticker(symbol.upper())
-
         df = ticker.history(
             period=period,
             interval="1d",
             auto_adjust=True,
-            prepost=True
+            prepost=True,
         )
-
         if df is None or df.empty:
             return None
-
         df = df.dropna()
-
         if len(df) < 10:
-            return None
-
-        return df
-
-    except Exception as e:
-        st.error(f"Yahoo Finance Error: {e}")
-        return None
-    try:
-        df = yf.Ticker(symbol.upper()).history(period=period, auto_adjust=True)
-        if df.empty:
             return None
         df.index = pd.to_datetime(df.index)
         return df
-    except Exception:
+    except Exception as e:
+        st.error(f"Yahoo Finance Error: {e}")
         return None
 
 
@@ -654,6 +641,20 @@ def kpi_box(label: str, value: str, cls: str = "") -> str:
         <div class="kpi-label">{label}</div>
         <div class="kpi-val {cls}">{value}</div>
     </div>"""
+
+
+def model_breakdown_html(individual: dict) -> str:
+    """Build clean, valid HTML rows for the per-model probability breakdown."""
+    rows = []
+    for name, val in individual.items():
+        rows.append(
+            f'<div style="display:flex;justify-content:space-between;'
+            f'font-family:var(--mono);font-size:0.65rem;margin-bottom:2px;">'
+            f'<span style="color:var(--t3);">{name.upper()}</span>'
+            f'<span style="color:var(--t2);">{val*100:.1f}%</span>'
+            f'</div>'
+        )
+    return "".join(rows)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -876,7 +877,7 @@ class QuantMLEngine:
         }
 
     # ── PREDICT ──────────────────────────────────────────────
-    def predict(self, df: pd.DataFrame) -> dict | None:
+    def predict(self, df: pd.DataFrame):
         if not self.trained:
             return None
         df = self.engineer_features(df)
@@ -916,7 +917,7 @@ class QuantMLEngine:
         }
 
     # ── BULK PROBABILITIES ────────────────────────────────────
-    def bulk_proba(self, df: pd.DataFrame) -> np.ndarray | None:
+    def bulk_proba(self, df: pd.DataFrame):
         if not self.trained:
             return None
         df = self.engineer_features(df)
@@ -1410,15 +1411,7 @@ with tab_live:
                     <div style="margin-top:0.55rem;border-top:1px solid var(--bdr);padding-top:0.45rem;">
                         <div style="font-family:var(--mono);font-size:0.58rem;color:var(--t3);
                             letter-spacing:0.1em;margin-bottom:0.35rem;">MODEL BREAKDOWN</div>
-                        {''.join(f""" < div style="display: flex
-                            justify-content: space-between
-                            font-family: var(--mono)
-                            font-size: 0.65rem
-                            margin-bottom: 2px
-                            ">
-                            <span style="color:var(--t3);" > {n.upper()} < /span >
-                            < span style="color:var(--t2);" > {v*100: .1f} % </span >
-                            < / div > """ for n,v in pred['individual'].items())}
+                        {model_breakdown_html(pred['individual'])}
                     </div>
                 </div>""", unsafe_allow_html=True)
 
@@ -1947,7 +1940,8 @@ with tab_bt:
                         eq_s) else list(range(len(eq_s))),
                     y=eq_s, mode="lines", name="Strategy",
                     line=dict(color=eq_c, width=2),
-                    fill="tozeroy", fillcolor=f"rgba{tuple(list(bytes.fromhex(eq_c[1:])) + [10])}".replace("(", "rgba(").replace(",10", ",.04")
+                    fill="tozeroy",
+                    fillcolor="rgba(0,255,148,0.06)" if res["total_return"] >= 0 else "rgba(255,50,80,0.06)",
                 ), row=1, col=1)
 
                 # BH benchmark
@@ -2175,7 +2169,7 @@ with tab_scan:
         sc_color = "#00ff94" if r["score"] >= 5 else "#ffb347" if r["score"] >= 3 else "#ff3250"
 
         vals = [
-            (r["sym"],           "#t1"),
+            (r["sym"],           "#dde4f0"),
             (f"${r['price']:.2f}", "#7e8fa8"),
             (f"{r['ret_1d']:+.2f}%", c1d),
             (f"{r['ret_1w']:+.2f}%", c1w),
@@ -2433,7 +2427,7 @@ with tab_news:
                     num = float(val.replace("%", "").replace(
                         "$", "").replace(",", ""))
                     color = "#00ff94" if num > 0 else "#ff3250"
-                except:
+                except Exception:
                     pass
             with fc_cols[i % 4]:
                 st.markdown(f"""
