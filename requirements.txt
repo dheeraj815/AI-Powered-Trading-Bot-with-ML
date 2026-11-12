@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────
+#  QuantPilot AI — Python Dependencies
+# ──────────────────────────────────────────────
+
+# Core UI framework
+streamlit==1.32.0
+
+# Data manipulation
+pandas==2.2.1
+numpy==1.26.4
+
+# Machine learning
+scikit-learn==1.4.1
+
+# Market data feed
+yfinance==0.2.37
+
+# Technical indicators (optional fallback — core indicators are native)
+ta==0.11.0
+
+# Visualisation
+plotly==5.20.0
+matplotlib==3.8.3
+
+# Persistence & serialisation
+joblib==1.3.2
+
+# ──────────────────────────────────────────────
+#  Optional: PDF report export
+#  Run: pip install fpdf2
+# ──────────────────────────────────────────────
+# fpdf2>=2.7.9
